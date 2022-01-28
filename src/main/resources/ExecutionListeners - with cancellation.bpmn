@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0117lip" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="2.2.4" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.15.0">
+  <bpmn:process id="listenersWithCancellation" isExecutable="true">
+    <bpmn:startEvent id="StartEventProcessStarted" name="Process Started">
+      <bpmn:outgoing>Flow_1ybik1w</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_1ybik1w" sourceRef="StartEventProcessStarted" targetRef="UserTaksDoSomething" />
+    <bpmn:sequenceFlow id="Flow_0ni5utb" sourceRef="UserTaksDoSomething" targetRef="ReceiveTaskWaitForMessage" />
+    <bpmn:endEvent id="EndEventProcessEnded" name="Process Ended">
+      <bpmn:incoming>Flow_0vugko7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0vugko7" sourceRef="ReceiveTaskWaitForMessage" targetRef="EndEventProcessEnded" />
+    <bpmn:userTask id="UserTaksDoSomething" name="Do something">
+      <bpmn:extensionElements>
+        <camunda:taskListener delegateExpression="${listenToTask}" event="complete" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1ybik1w</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ni5utb</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:receiveTask id="ReceiveTaskWaitForMessage" name="Wait for message" messageRef="Message_1g2rrcs">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${listenToExecution}" event="end" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0ni5utb</bpmn:incoming>
+      <bpmn:outgoing>Flow_0vugko7</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:subProcess id="Activity_0bkzgwe" triggeredByEvent="true">
+      <bpmn:startEvent id="ReceiveEventCancellation" name="Cancellation">
+        <bpmn:outgoing>Flow_1h9rzwn</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MessageEventDefinition_0i3mc10" messageRef="Message_1buem9j" />
+      </bpmn:startEvent>
+      <bpmn:endEvent id="EndEvent_ProcessCanceled" name="Process cancelled">
+        <bpmn:incoming>Flow_1h9rzwn</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_1h9rzwn" sourceRef="ReceiveEventCancellation" targetRef="EndEvent_ProcessCanceled" />
+    </bpmn:subProcess>
+    <bpmn:textAnnotation id="TextAnnotation_1ebz01p">
+      <bpmn:text>"End" Execution Listener checks whether input is complete</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1kgjo86" sourceRef="UserTaksDoSomething" targetRef="TextAnnotation_1ebz01p" />
+    <bpmn:textAnnotation id="TextAnnotation_1v6w8l8">
+      <bpmn:text>"End" Execution Listener writes input into underlying data model</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1l9fqeq" sourceRef="ReceiveTaskWaitForMessage" targetRef="TextAnnotation_1v6w8l8" />
+  </bpmn:process>
+  <bpmn:message id="Message_1buem9j" name="Cancellation" />
+  <bpmn:message id="Message_1g2rrcs" name="SomeMessage" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="listenersWithCancellation">
+      <bpmndi:BPMNShape id="TextAnnotation_1ebz01p_di" bpmnElement="TextAnnotation_1ebz01p">
+        <dc:Bounds x="230" y="80" width="150" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1v6w8l8_di" bpmnElement="TextAnnotation_1v6w8l8">
+        <dc:Bounds x="410" y="85" width="150" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1ybik1w_di" bpmnElement="Flow_1ybik1w">
+        <di:waypoint x="215" y="207" />
+        <di:waypoint x="270" y="207" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ni5utb_di" bpmnElement="Flow_0ni5utb">
+        <di:waypoint x="370" y="207" />
+        <di:waypoint x="430" y="207" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vugko7_di" bpmnElement="Flow_0vugko7">
+        <di:waypoint x="530" y="207" />
+        <di:waypoint x="592" y="207" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEventProcessStarted">
+        <dc:Bounds x="179" y="189" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="158" y="232" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1mby9v4_di" bpmnElement="EndEventProcessEnded">
+        <dc:Bounds x="592" y="189" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="573" y="232" width="75" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0suw5nb_di" bpmnElement="UserTaksDoSomething">
+        <dc:Bounds x="270" y="167" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_11mxux4_di" bpmnElement="ReceiveTaskWaitForMessage">
+        <dc:Bounds x="430" y="167" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_1kgjo86_di" bpmnElement="Association_1kgjo86">
+        <di:waypoint x="315" y="167" />
+        <di:waypoint x="312" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_1l9fqeq_di" bpmnElement="Association_1l9fqeq">
+        <di:waypoint x="473" y="167" />
+        <di:waypoint x="467" y="135" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Activity_176q3u2_di" bpmnElement="Activity_0bkzgwe" isExpanded="true">
+        <dc:Bounds x="160" y="290" width="270" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1h9rzwn_di" bpmnElement="Flow_1h9rzwn">
+        <di:waypoint x="238" y="340" />
+        <di:waypoint x="342" y="340" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_1ad37lh_di" bpmnElement="ReceiveEventCancellation">
+        <dc:Bounds x="202" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="190" y="365" width="61" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_004svkb_di" bpmnElement="EndEvent_ProcessCanceled">
+        <dc:Bounds x="342" y="322" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="315" y="365" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
