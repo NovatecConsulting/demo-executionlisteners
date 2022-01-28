@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,12 @@ public class TestWithAnnotation {
             .createDeployment()
             .addClasspathResource(PROCESS_MODEL_PATH)
             .deploy();
+    }    
+
+    @AfterEach
+    void cleanUp() {        
+        repositoryService.createDeploymentQuery().list().forEach(
+            deployment -> repositoryService.deleteDeployment(deployment.getId(), true));   
     }
     
     @Test
@@ -43,8 +50,6 @@ public class TestWithAnnotation {
         
         runtimeService.createMessageCorrelation(CANCELLATION_MESSAGE_NAME).correlate();
         assertThat(processInstance).isEnded();
-        
-        cleanUp();
     }
     
     @Test
@@ -65,8 +70,6 @@ public class TestWithAnnotation {
         
         runtimeService.deleteProcessInstance(processInstance.getId(), "someReason");
         assertThat(processInstance).isEnded();
-        
-        cleanUp();
     }
     
     
@@ -80,8 +83,6 @@ public class TestWithAnnotation {
             .setVariable(VARIABLE_REQUIRED_FOR_COMPLETING_SEND_TASK, "someValue")
             .correlate();
         assertThat(processInstance).isEnded();
-        
-        cleanUp();
     }
     
     @Test
@@ -92,12 +93,5 @@ public class TestWithAnnotation {
         
         assertThrows(RuntimeException.class, () -> runtimeService.createMessageCorrelation(SOME_MESSAGE_NAME).correlate());        
         assertThat(processInstance).isWaitingAtExactly("ReceiveTaskWaitForMessage");
-        
-        cleanUp();
-    }
-    
-    void cleanUp() {        
-        repositoryService.createDeploymentQuery().list().forEach(
-            deployment -> repositoryService.deleteDeployment(deployment.getId(), true));   
     }
 }
