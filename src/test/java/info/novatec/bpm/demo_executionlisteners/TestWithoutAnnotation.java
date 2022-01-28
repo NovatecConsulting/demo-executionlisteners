@@ -14,16 +14,13 @@ import org.camunda.bpm.engine.ProcessEngineException;
 import org.camunda.bpm.engine.RepositoryService;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties="listenerWithAnnotation=false")
-@TestMethodOrder(OrderAnnotation.class)
+@SpringBootTest(properties={"listenerWithAnnotation=false", "camunda.bpm.generate-unique-process-engine-name=true"})
 public class TestWithoutAnnotation {
     
     private static final String PROCESS_MODEL_PATH = "ExecutionListeners - with cancellation.bpmn";
@@ -42,8 +39,13 @@ public class TestWithoutAnnotation {
             .deploy();
     }
     
+    @AfterEach
+    void cleanUp() {        
+        repositoryService.createDeploymentQuery().list().forEach(
+            deployment -> repositoryService.deleteDeployment(deployment.getId(), true, true));   
+    }
+    
     @Test
-    @Order(1)
     void userTask_should_not_be_completeable_without_variable() {
         ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
             .startBeforeActivity("UserTaksDoSomething").execute();
@@ -51,12 +53,9 @@ public class TestWithoutAnnotation {
         
         assertThrows(ProcessEngineException.class, () -> complete(task()));
         assertThat(processInstance).isWaitingAtExactly("UserTaksDoSomething");
-        
-        cleanUp();
     }
     
     @Test
-    @Order(2)
     void processInstance_waiting_at_userTask_should_be_cancellable_without_variable() {
         ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
             .startBeforeActivity("UserTaksDoSomething").execute();
@@ -64,23 +63,28 @@ public class TestWithoutAnnotation {
         
         runtimeService.createMessageCorrelation(CANCELLATION_MESSAGE_NAME).correlate();
         assertThat(processInstance).isEnded();
-        
-        cleanUp();
     }
     
     @Test
-    @Order(3)
     void processInstance_deployment_should_be_deletable_when_waiting_at_usertask() {
         ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
             .startBeforeActivity("UserTaksDoSomething").execute();
         assertThat(processInstance).isWaitingAtExactly("UserTaksDoSomething");
         
-        cleanUp();
         assertThat(repositoryService.createDeploymentQuery().list().isEmpty());
     }
     
     @Test
-    @Order(4)
+    void processInstance_waiting_at_receiveTask_should_not_be_cancellable_without_variable() {
+    	ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
+                .startBeforeActivity("ReceiveTaskWaitForMessage").execute();
+        assertThat(processInstance).isWaitingAtExactly("ReceiveTaskWaitForMessage");
+        
+        assertThrows(RuntimeException.class, () -> runtimeService.createMessageCorrelation(CANCELLATION_MESSAGE_NAME).correlate());
+        assertThat(processInstance).isWaitingAtExactly("ReceiveTaskWaitForMessage");
+    }
+    
+    @Test
     void receiveTask_should_be_completeable_with_variable(){
         ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
             .startBeforeActivity("ReceiveTaskWaitForMessage").execute();
@@ -90,22 +94,15 @@ public class TestWithoutAnnotation {
             .setVariable(VARIABLE_REQUIRED_FOR_COMPLETING_SEND_TASK, "someValue")
             .correlate();
         assertThat(processInstance).isEnded();
-        
-        cleanUp();
     }
     
     @Test
-    @Order(5)
     void process_instance_deployment_should_not_be_deletable_when_waiting_at_receiveTask() {
         ProcessInstance processInstance = runtimeService.createProcessInstanceByKey(PROCESS_DEFINITION_KEY_WITH_CANCELLATION)
             .startBeforeActivity("ReceiveTaskWaitForMessage").execute();
         assertThat(processInstance).isWaitingAtExactly("ReceiveTaskWaitForMessage");
         
-        assertThrows(RuntimeException.class, () -> cleanUp());
-    }
-    
-    void cleanUp() {        
-        repositoryService.createDeploymentQuery().list().forEach(
-            deployment -> repositoryService.deleteDeployment(deployment.getId(), true));   
+        assertThrows(RuntimeException.class, () -> repositoryService.createDeploymentQuery().list().forEach(
+                deployment -> repositoryService.deleteDeployment(deployment.getId(), true)));   
     }
 }

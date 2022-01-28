@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties="listenerWithAnnotation=true")
+@SpringBootTest(properties={"listenerWithAnnotation=true", "camunda.bpm.generate-unique-process-engine-name=true"})
 public class TestWithAnnotation {
     
     private static final String PROCESS_MODEL_PATH = "ExecutionListeners - with cancellation.bpmn";
